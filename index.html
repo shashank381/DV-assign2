@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCU Waste Visualization</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .chart {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: auto;
+            height: auto;
+            padding: 8px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        .bar {
+            fill: steelblue;
+        }
+        .bar:hover {
+            fill: darkorange;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mt-5">SCU Waste Characterization Data</h1>
+        <div class="form-group">
+            <label for="year-select">Select Year:</label>
+            <select id="year-select" class="form-control">
+                <!-- Options will be dynamically populated -->
+            </select>
+        </div>
+        <div id="bar-chart" class="chart"></div>
+    </div>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
