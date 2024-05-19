@@ -31,6 +31,11 @@ d3.json("data.json").then(data => {
         "Recycling in Landfill": "Recycling"
     };
 
+    // Consistent color scale
+    const color = d3.scaleOrdinal()
+        .domain(["Compost", "Recycling", "Landfill"])
+        .range(["#4caf50", "#2196f3", "#9e9e9e"]); // Green, Blue, Grey
+
     // Get unique years for the dropdown
     const years = [...new Set(data.map(d => d.year))];
     const yearSelect = d3.select("#year-select");
@@ -43,21 +48,21 @@ d3.json("data.json").then(data => {
         .attr("value", d => d);
 
     // Initial chart update with the first year in the list
-    updateStackedBarChart(data, years[0], "before");
+    let currentState = "before";
+    let currentYear = years[0];
+    updateStackedBarChart(data, currentYear, currentState);
 
     // Update chart on year selection change
     yearSelect.on("change", function() {
-        const selectedYear = +this.value;
-        updateStackedBarChart(data, selectedYear, d3.select("#toggle-button").text().includes("After") ? "after" : "before");
+        currentYear = +this.value;
+        updateStackedBarChart(data, currentYear, currentState);
     });
 
     // Toggle button
     d3.select("#toggle-button").on("click", function() {
-        const currentText = d3.select(this).text();
-        const newState = currentText.includes("After") ? "before" : "after";
-        const selectedYear = +yearSelect.property("value");
-        updateStackedBarChart(data, selectedYear, newState);
-        d3.select(this).text(currentText.includes("After") ? "Show Before Sorting" : "Show After Sorting");
+        currentState = currentState === "before" ? "after" : "before";
+        updateStackedBarChart(data, currentYear, currentState);
+        d3.select(this).text(currentState === "before" ? "Show After Sorting" : "Show Before Sorting");
     });
 
     function updateStackedBarChart(data, year, state) {
@@ -70,28 +75,24 @@ d3.json("data.json").then(data => {
             Stream: state === "before" ? beforeSortingMap[d.Stream] || d.Stream : afterSortingMap[d.Stream] || d.Stream
         }));
 
-        // Aggregate weight by building and stream
+        // Ensure all streams are present
+        const streams = ["Compost", "Recycling", "Landfill"];
+        const emptyData = streams.reduce((acc, stream) => ({ ...acc, [stream]: 0 }), {});
         const aggregatedData = Array.from(
             d3.group(categorizedData, d => d.Building),
-            ([key, values]) => {
-                const result = { Building: key };
-                d3.rollup(values, v => {
-                    for (const d of v) {
-                        if (!result[d.Stream]) result[d.Stream] = 0;
-                        result[d.Stream] += d.weight;
-                    }
-                });
-                return result;
-            }
+            ([key, values]) => ({
+                Building: key,
+                ...streams.reduce((acc, stream) => ({
+                    ...acc,
+                    [stream]: d3.sum(values, d => d.Stream === stream ? d.weight : 0)
+                }), emptyData)
+            })
         );
-
-        // Define the streams
-        const streams = Array.from(new Set(categorizedData.map(d => d.Stream)));
 
         // Stack the data
         const stack = d3.stack()
             .keys(streams)
-            .value((d, key) => d[key] || 0);
+            .value((d, key) => d[key]);
         const stackedData = stack(aggregatedData);
 
         // Define margins, width, and height
@@ -99,47 +100,63 @@ d3.json("data.json").then(data => {
         const width = 600 - margin.left - margin.right;
         const height = 400 - margin.top - margin.bottom;
 
-        // Clear previous chart
-        d3.select("#bar-chart").selectAll("*").remove();
-
-        const svg = d3.select("#bar-chart").append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        // Select the SVG container, create it if it doesn't exist
+        let svg = d3.select("#bar-chart svg");
+        if (svg.empty()) {
+            svg = d3.select("#bar-chart").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        } else {
+            svg = svg.select("g");
+        }
 
         const x = d3.scaleBand().range([0, width]).padding(0.1);
         const y = d3.scaleLinear().range([height, 0]);
-        const color = d3.scaleOrdinal().domain(streams).range(d3.schemeCategory10);
 
         x.domain(aggregatedData.map(d => d.Building));
         y.domain([0, d3.max(stackedData, d => d3.max(d, d => d[1]))]);
 
-        svg.append("g")
+        // Update axes
+        const xAxis = svg.selectAll(".x-axis").data([0]);
+        xAxis.enter().append("g")
+            .attr("class", "x-axis")
             .attr("transform", "translate(0," + height + ")")
+            .merge(xAxis)
+            .transition().duration(1000)
             .call(d3.axisBottom(x))
             .selectAll("text")
             .attr("transform", "rotate(-45)")
             .style("text-anchor", "end");
 
-        svg.append("g")
+        const yAxis = svg.selectAll(".y-axis").data([0]);
+        yAxis.enter().append("g")
+            .attr("class", "y-axis")
+            .merge(yAxis)
+            .transition().duration(1000)
             .call(d3.axisLeft(y));
 
         const tooltip = d3.select("body").append("div")
             .attr("class", "tooltip")
             .style("opacity", 0);
 
-        // Create bars
+        // Create layers
         const layers = svg.selectAll("g.layer")
             .data(stackedData, d => d.key);
 
         layers.enter().append("g")
             .attr("class", "layer")
             .attr("fill", d => color(d.key))
-            .merge(layers)
-            .selectAll("rect")
-            .data(d => d, d => d.data.Building)
-            .enter().append("rect")
+            .merge(layers);
+
+        layers.exit().remove();
+
+        // Create bars
+        const bars = layers.selectAll("rect")
+            .data(d => d, d => d.data.Building);
+
+        bars.enter().append("rect")
             .attr("x", d => x(d.data.Building))
             .attr("width", x.bandwidth())
             .attr("y", height)
@@ -153,32 +170,42 @@ d3.json("data.json").then(data => {
             .on("mouseout", d => {
                 tooltip.transition().duration(500).style("opacity", 0);
             })
-            .transition()
-            .duration(1000)
+            .merge(bars)
+            .transition().duration(1000)
+            .attr("x", d => x(d.data.Building))
+            .attr("width", x.bandwidth())
             .attr("y", d => y(d[1]))
             .attr("height", d => y(d[0]) - y(d[1]));
 
-        layers.exit().remove();
+        bars.exit().transition().duration(1000)
+            .attr("y", height)
+            .attr("height", 0)
+            .remove();
 
         // Add legend
         const legend = svg.selectAll(".legend")
-            .data(streams.slice().reverse())
-            .enter().append("g")
+            .data(streams.slice().reverse());
+
+        const legendEnter = legend.enter().append("g")
             .attr("class", "legend")
             .attr("transform", (d, i) => "translate(0," + i * 20 + ")");
 
-        legend.append("rect")
+        legendEnter.append("rect")
             .attr("x", width - 18)
             .attr("width", 18)
             .attr("height", 18)
             .style("fill", color);
 
-        legend.append("text")
+        legendEnter.append("text")
             .attr("x", width - 24)
             .attr("y", 9)
             .attr("dy", ".35em")
             .style("text-anchor", "end")
             .text(d => d);
+
+        legendEnter.merge(legend);
+
+        legend.exit().remove();
     }
 }).catch(error => {
     console.error('Error loading the data:', error);
