@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCU Waste Visualization</title>
+    <title>Santa Clara University Waste Visualization</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -67,6 +67,8 @@
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             position: relative;
+            height: 700px; 
+            width: 100%; 
         }
         .tooltip {
             position: absolute;
@@ -82,11 +84,11 @@
         }
         .legend {
             display: flex;
-            justify-content: center;
+            justify-content: flex-end; /* Align legend to the right */
             align-items: center;
-            margin-top: 20px;
+            margin-top: 10px;
             position: absolute;
-            top: 0px;
+            top: 10px;
             right: 10px;
             background: rgba(255, 255, 255, 0.8);
             padding: 10px;
@@ -109,10 +111,6 @@
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        .points {
-            font-weight: 400;
-            color: #34495e;
-        }
     </style>
 </head>
 <body>
@@ -120,14 +118,13 @@
         <div class="form-group">
             <label for="year-select">Select Year:</label>
             <select id="year-select" class="form-control">
-                <!-- Options will be dynamically populated -->
             </select>
         </div>
         <button id="toggle-button" class="btn btn-primary mt-3">Show After Sorting</button>
     </div>
     <div class="content">
         <h1>Santa Clara University Waste Visualization</h1>
-        <p>This visualization represents the waste characterization data from Santa Clara University. The chart shows the waste distribution across different buildings and streams (Compost, Recycling, Landfill). You can select a year from the dropdown menu and toggle between the waste data before sorting and after sorting using the button to see how the compositions of each stream change.</p>
+        <p>This visualization represents the waste characterization data from Santa Clara University. The primary goal is to highlight how proper waste sorting alters the compositions of each waste stream (Compost, Recycling, and Landfill) before and after sorting. This visualization allows users to explore the waste data for different years and understand the impact of sorting on waste management through an interactive experience.</p>
         <h2 id="chart-heading" class="h5">Waste Before Sorting in 2018</h2>
         <div class="chart">
             <div id="bar-chart"></div>
@@ -158,8 +155,8 @@
                 Users can select the year they are interested in to see the waste data for that specific year. The toggle button allows users to switch between the "Before Sorting" and "After Sorting" views. This interaction is designed to highlight the impact of proper waste sorting by smoothly transitioning the bar components between the two states. Hovering over each stack provides detailed information of each stream and its weight.
                 By default, the chart shows the "Before Sorting" view, which represents the initial state of the waste as disposed of by the users. Upon clicking the button, the chart transitions smoothly to the "After Sorting" view, which represents the waste sorted correctly. This transition between before and after sorting views enables viewers to easily compare the waste streams and understand the impact of proper waste sorting. The smooth animation helps to visually connect the two states, making it clear how misclassified waste can significantly alter the composition of each stream.
             </p>
-            <p class="points"><strong>Trends and Patterns:</strong><br>
-                <ul class="points">
+            <p><strong>Trends and Patterns:</strong><br>
+                <ul>
                     <li>Throughout the years, landfill waste consistently emerges as the largest stream of waste generated before sorting, with one notable exception in 2019 at the Learning Commons building, where recycling waste was the most prominent.</li>
                     <li>In 2020 and 2023, before sorting plots reveal that buildings such as Vari and Lucas Hall, and Swig have exclusively generated landfill waste. Similar patterns are observed in previous years, such as Graham in 2015, University Villas, Graham, and Benson Center in 2016, and several other buildings in subsequent years. This pattern suggests that there might not have been separate bins for compost and recycling waste, leading to all waste being disposed of in a single bin.</li>
                     <li>After sorting, the plots for various buildings show a significant decrease in landfill waste and an increase in compost waste. This indicates that users frequently dispose of compost waste in landfill bins, making compost the most commonly misclassified waste stream.</li>
@@ -167,7 +164,6 @@
                 </ul>
             </p>
         </div>
-        
     </div>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="app.js"></script>
