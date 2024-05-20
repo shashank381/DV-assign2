@@ -36,8 +36,8 @@ d3.json("data.json").then(data => {
         .domain(["Compost", "Recycling", "Landfill"])
         .range(["#4caf50", "#2196f3", "#9e9e9e"]); // Green, Blue, Grey
 
-    // Get unique years for the dropdown
-    const years = [...new Set(data.map(d => d.year))];
+    // Get unique years for the dropdown and sort in ascending order
+    const years = [...new Set(data.map(d => d.year))].sort((a, b) => a - b);
     const yearSelect = d3.select("#year-select");
 
     yearSelect.selectAll("option")
@@ -50,6 +50,37 @@ d3.json("data.json").then(data => {
     // Initial chart update with the first year in the list
     let currentState = "before";
     let currentYear = years[0];
+
+    // Define margins, width, and height
+    const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+    const width = 800 - margin.left - margin.right;
+    const height = 600 - margin.top - margin.bottom;
+
+    // Create the SVG container
+    const svg = d3.select("#bar-chart").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Create x and y scales
+    const x = d3.scaleBand().range([0, width]).padding(0.1);
+    const y = d3.scaleLinear().range([height, 0]);
+
+    // Create axes
+    svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", "translate(0," + height + ")");
+
+    svg.append("g")
+        .attr("class", "y-axis");
+
+    // Create the tooltip
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+    // Initial chart rendering
     updateStackedBarChart(data, currentYear, currentState);
 
     // Update chart on year selection change
@@ -95,82 +126,60 @@ d3.json("data.json").then(data => {
             .value((d, key) => d[key]);
         const stackedData = stack(aggregatedData);
 
-        // Define margins, width, and height
-        const margin = { top: 20, right: 30, bottom: 40, left: 50 };
-        const width = 600 - margin.left - margin.right;
-        const height = 400 - margin.top - margin.bottom;
+        // Update chart heading
+        d3.select("#chart-heading").text(`Waste ${state === "before" ? "Before" : "After"} Sorting in ${year}`);
 
-        // Select the SVG container, create it if it doesn't exist
-        let svg = d3.select("#bar-chart svg");
-        if (svg.empty()) {
-            svg = d3.select("#bar-chart").append("svg")
-                .attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom)
-                .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-        } else {
-            svg = svg.select("g");
-        }
-
-        const x = d3.scaleBand().range([0, width]).padding(0.1);
-        const y = d3.scaleLinear().range([height, 0]);
-
+        // Update x and y domains
         x.domain(aggregatedData.map(d => d.Building));
         y.domain([0, d3.max(stackedData, d => d3.max(d, d => d[1]))]);
 
         // Update axes
-        const xAxis = svg.selectAll(".x-axis").data([0]);
-        xAxis.enter().append("g")
-            .attr("class", "x-axis")
-            .attr("transform", "translate(0," + height + ")")
-            .merge(xAxis)
+        svg.select(".x-axis")
             .transition().duration(1000)
             .call(d3.axisBottom(x))
             .selectAll("text")
-            .attr("transform", "rotate(-45)")
-            .style("text-anchor", "end");
+            .style("font-size", "14px")
+            //.color("white")
+            //.attr("transform", "rotate(-45)")
+            //.style("text-anchor", "end");
 
-        const yAxis = svg.selectAll(".y-axis").data([0]);
-        yAxis.enter().append("g")
-            .attr("class", "y-axis")
-            .merge(yAxis)
+        svg.select(".y-axis")
             .transition().duration(1000)
-            .call(d3.axisLeft(y));
-
-        const tooltip = d3.select("body").append("div")
-            .attr("class", "tooltip")
-            .style("opacity", 0);
-
+            .style("font-size", "12px")
+            .call(d3.axisLeft(y).tickFormat(d => `${d} lbs`));
         // Create layers
         const layers = svg.selectAll("g.layer")
             .data(stackedData, d => d.key);
 
-        layers.enter().append("g")
+        const layersEnter = layers.enter().append("g")
             .attr("class", "layer")
-            .attr("fill", d => color(d.key))
-            .merge(layers);
+            .attr("fill", d => color(d.key));
+
+        layersEnter.merge(layers);
 
         layers.exit().remove();
 
         // Create bars
-        const bars = layers.selectAll("rect")
+        const bars = layersEnter.merge(layers).selectAll("rect")
             .data(d => d, d => d.data.Building);
 
-        bars.enter().append("rect")
+        const barsEnter = bars.enter().append("rect")
             .attr("x", d => x(d.data.Building))
             .attr("width", x.bandwidth())
             .attr("y", height)
             .attr("height", 0)
-            .on("mouseover", (event, d) => {
+            .on("mouseover", function(event, d) {
+                const stream = d3.select(this.parentNode).datum().key;
                 tooltip.transition().duration(200).style("opacity", .9);
-                tooltip.html(`Building: ${d.data.Building}<br>Weight: ${d[1] - d[0]} lbs`)
+                tooltip.html(`Stream: ${stream}<br>Weight: ${d[1] - d[0]} lbs`)
                     .style("left", (event.pageX + 5) + "px")
                     .style("top", (event.pageY - 28) + "px");
             })
-            .on("mouseout", d => {
+            .on("mouseout", () => {
                 tooltip.transition().duration(500).style("opacity", 0);
-            })
-            .merge(bars)
+            });
+
+        barsEnter.merge(bars)
             .transition().duration(1000)
             .attr("x", d => x(d.data.Building))
             .attr("width", x.bandwidth())
@@ -181,31 +190,6 @@ d3.json("data.json").then(data => {
             .attr("y", height)
             .attr("height", 0)
             .remove();
-
-        // Add legend
-        const legend = svg.selectAll(".legend")
-            .data(streams.slice().reverse());
-
-        const legendEnter = legend.enter().append("g")
-            .attr("class", "legend")
-            .attr("transform", (d, i) => "translate(0," + i * 20 + ")");
-
-        legendEnter.append("rect")
-            .attr("x", width - 18)
-            .attr("width", 18)
-            .attr("height", 18)
-            .style("fill", color);
-
-        legendEnter.append("text")
-            .attr("x", width - 24)
-            .attr("y", 9)
-            .attr("dy", ".35em")
-            .style("text-anchor", "end")
-            .text(d => d);
-
-        legendEnter.merge(legend);
-
-        legend.exit().remove();
     }
 }).catch(error => {
     console.error('Error loading the data:', error);
