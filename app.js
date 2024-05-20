@@ -53,7 +53,7 @@ d3.json("data.json").then(data => {
 
     // Define margins, width, and height
     const margin = { top: 20, right: 30, bottom: 40, left: 50 };
-    const width = 800 - margin.left - margin.right;
+    const width = 960 - margin.left - margin.right;
     const height = 600 - margin.top - margin.bottom;
 
     // Create the SVG container
@@ -138,15 +138,13 @@ d3.json("data.json").then(data => {
             .transition().duration(1000)
             .call(d3.axisBottom(x))
             .selectAll("text")
-            .style("font-size", "14px")
-            //.color("white")
-            //.attr("transform", "rotate(-45)")
-            //.style("text-anchor", "end");
+            .style("font-size", "14px");
 
         svg.select(".y-axis")
             .transition().duration(1000)
             .style("font-size", "12px")
             .call(d3.axisLeft(y).tickFormat(d => `${d} lbs`));
+
         // Create layers
         const layers = svg.selectAll("g.layer")
             .data(stackedData, d => d.key);
