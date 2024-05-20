@@ -5,12 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SCU Waste Visualization</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        body {
+            display: flex;
+            height: 100vh;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7f6;
+        }
+        .sidebar {
+            width: 250px;
+            padding: 20px;
+            background-color: #2c3e50;
+            color: white;
+            flex-shrink: 0;
+        }
+        .sidebar .form-group, .sidebar button {
+            margin-top: 20px;
+        }
+        .sidebar label {
+            font-weight: 500;
+        }
+        .sidebar select, .sidebar button {
+            width: 100%;
+        }
+        .sidebar button {
+            background-color: #18bc9c;
+            border-color: #18bc9c;
+        }
+        .sidebar button:hover {
+            background-color: #15a589;
+            border-color: #15a589;
+        }
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        h1 {
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        h2 {
+            font-weight: 500;
+            color: #34495e;
+            margin-top: 10px;
+        }
+        p {
+            font-weight: 400;
+            color: #34495e;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
         .chart {
             display: flex;
             justify-content: center;
             align-items: center;
             margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
         }
         .tooltip {
             position: absolute;
@@ -18,23 +74,49 @@
             width: auto;
             height: auto;
             padding: 8px;
-            font: 12px sans-serif;
+            font: 12px 'Roboto', sans-serif;
             background: lightsteelblue;
             border: 0;
             border-radius: 8px;
             pointer-events: none;
         }
-        .bar {
-            fill: steelblue;
+        .legend {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
         }
-        .bar:hover {
-            fill: darkorange;
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+        .story {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .points {
+            font-weight: 400;
+            color: #34495e;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-center mt-5">SCU Waste Characterization Data</h1>
+    <div class="sidebar">
         <div class="form-group">
             <label for="year-select">Select Year:</label>
             <select id="year-select" class="form-control">
@@ -42,7 +124,50 @@
             </select>
         </div>
         <button id="toggle-button" class="btn btn-primary mt-3">Show After Sorting</button>
-        <div id="bar-chart" class="chart"></div>
+    </div>
+    <div class="content">
+        <h1>Santa Clara University Waste Visualization</h1>
+        <p>This visualization represents the waste characterization data from Santa Clara University. The chart shows the waste distribution across different buildings and streams (Compost, Recycling, Landfill). You can select a year from the dropdown menu and toggle between the waste data before sorting and after sorting using the button to see how the compositions of each stream change.</p>
+        <h2 id="chart-heading" class="h5">Waste Before Sorting in 2018</h2>
+        <div class="chart">
+            <div id="bar-chart"></div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #4caf50;"></div>
+                    <span>Compost</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #2196f3;"></div>
+                    <span>Recycling</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #9e9e9e;"></div>
+                    <span>Landfill</span>
+                </div>
+            </div>
+        </div>
+        <div class="story">
+            <h2>Story and Analysis</h2>
+            <p><strong>Introduction:</strong><br>
+                This interactive visualization represents the waste characterization data from Santa Clara University. The primary goal is to highlight how proper waste sorting alters the compositions of each waste stream (Compost, Recycling, and Landfill) before and after sorting. This visualization allows users to explore the waste data for different years and understand the impact of sorting on waste management through an interactive experience.
+            </p>
+            <p><strong>Design Rationale and Justification:</strong><br>
+                The stacked bar chart effectively displays the composition of waste streams within each building, making it easy to compare the proportions of Compost, Recycling, and Landfill waste. The stacking enables the visualization of total waste generated while maintaining visibility of individual stream contributions. Also, it helps viewers understand how the composition of each waste stream changes after the waste has been sorted. The selection of colors for each waste stream serves two purposes: to differentiate between the streams and to convey additional meaning. Using green for compost, blue for recycling, and gray for landfill aligns with common color associations (e.g., green for environmentally friendly practices) while also facilitating quick identification of each stream.
+            </p>
+            <p><strong>Interactivity:</strong><br>
+                Users can select the year they are interested in to see the waste data for that specific year. The toggle button allows users to switch between the "Before Sorting" and "After Sorting" views. This interaction is designed to highlight the impact of proper waste sorting by smoothly transitioning the bar components between the two states. Hovering over each stack provides detailed information of each stream and its weight.
+                By default, the chart shows the "Before Sorting" view, which represents the initial state of the waste as disposed of by the users. Upon clicking the button, the chart transitions smoothly to the "After Sorting" view, which represents the waste sorted correctly. This transition between before and after sorting views enables viewers to easily compare the waste streams and understand the impact of proper waste sorting. The smooth animation helps to visually connect the two states, making it clear how misclassified waste can significantly alter the composition of each stream.
+            </p>
+            <p class="points"><strong>Trends and Patterns:</strong><br>
+                <ul class="points">
+                    <li>Throughout the years, landfill waste consistently emerges as the largest stream of waste generated before sorting, with one notable exception in 2019 at the Learning Commons building, where recycling waste was the most prominent.</li>
+                    <li>In 2020 and 2023, before sorting plots reveal that buildings such as Vari and Lucas Hall, and Swig have exclusively generated landfill waste. Similar patterns are observed in previous years, such as Graham in 2015, University Villas, Graham, and Benson Center in 2016, and several other buildings in subsequent years. This pattern suggests that there might not have been separate bins for compost and recycling waste, leading to all waste being disposed of in a single bin.</li>
+                    <li>After sorting, the plots for various buildings show a significant decrease in landfill waste and an increase in compost waste. This indicates that users frequently dispose of compost waste in landfill bins, making compost the most commonly misclassified waste stream.</li>
+                    <li>The Benson Center consistently generates the highest amount of waste across the years, with 418 lbs in 2015, 308 lbs in 2016, and 502 lbs in 2017, totaling 1,228 lbs over these years.</li>
+                </ul>
+            </p>
+        </div>
+        
     </div>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="app.js"></script>
